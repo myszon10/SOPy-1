@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <unistd.h>
+
+#define MAX_PATH 101
 
 #define ERR(source) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(EXIT_FAILURE))
 
@@ -42,10 +45,24 @@ void scan_dir() {
     if(closedir(dirp)) {
         ERR("closedir");
     }
-    printf("Files: %d, Links: %d, Directories: %d,  Other: %d", files, links, dirs, other);
+    printf("Files: %d, Links: %d, Directories: %d,  Other: %d\n", files, links, dirs, other);
 }
 
 int main(int argc, char* argv[]) {
-    scan_dir();
+    char path[MAX_PATH];
+    if(getcwd(path, MAX_PATH) == NULL) {
+        ERR("getcwd");
+    }
+
+    for(int i = 1; i < argc; i++) {
+        if(chdir(argv[i])) {
+            ERR("chdir");
+        }
+        printf("%s\n", argv[i]);
+        scan_dir();
+        if(chdir(path)) {
+            ERR("chdir");
+        }
+    }
     return EXIT_SUCCESS;
 }
