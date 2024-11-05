@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <bits/getopt_core.h>
 
 void usage(char *pname) {
     fprintf(stderr, "USAGE:%s ([-t x] -n Name) ... \n", pname);
