@@ -1,3 +1,5 @@
+// ZLICZANIE PLIKÓW/KATALOGÓW/LINKÓW/INNYCH W KATALOGU OKREŚLONYM ŚCIEŻKĄ
+
 #include <dirent.h>
 #include <errno.h>
 #include <stdio.h>

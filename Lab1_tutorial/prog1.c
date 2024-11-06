@@ -1,3 +1,5 @@
+// ZLICZENIE PLIKÓW/KATALOGÓW/LINKÓW/INNYCH W KATALOGU ROBOCZYM
+
 #include <dirent.h>
 #include <errno.h>
 #include <stdio.h>
