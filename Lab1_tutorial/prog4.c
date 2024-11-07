@@ -22,7 +22,7 @@ void make_file(char* name, ssize_t size, mode_t perms, int percent)
 {
     FILE *s1;
     umask(~perms & 0777); // 0 na początku -> system ósemkowy, umask chcę negację docelowych uprawnień
-    if((s1 == fopen(name, "w+")) == NULL) ERR("fopen");
+    if((s1 = fopen(name, "w+")) == NULL) ERR("fopen");
 
     for(int i = 0; i < (size * percent)/100; i++) // pętla wykona się tyle razy ile liter musimy wpisać
     {
