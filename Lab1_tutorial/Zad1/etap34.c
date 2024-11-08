@@ -1,5 +1,6 @@
 // WYPISANIE NAZW I ROZMIARÓW PLIKÓW W KATALOGU ROBOCZYM
 
+//#include <bits/getopt_core.h>
 #include <dirent.h>
 #include <errno.h>
 #include <stdio.h>
@@ -10,6 +11,7 @@
 #define ERR(source) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(EXIT_FAILURE))
 
 #define MAX_PATH 101
+
 
 void scan_dir(FILE* buff)
 {
@@ -47,6 +49,18 @@ int main(int argc, char* argv[])
     FILE* buff;
     if(getcwd(path, MAX_PATH) == NULL) ERR("getcwd");
 
+    while((c = getopt(argc, argv, "p:o:")) != -1)
+    {
+        switch(c)
+        {
+            case 'o':
+                out = make_file((optarg));
+                buff = out;
+                break;
+        }
+    }
+    optind = 1;
+
     while((c = getopt(argc, argv, "p:o:")) != -1) 
     {
         switch(c)
@@ -65,8 +79,8 @@ int main(int argc, char* argv[])
                 if(chdir(path)) ERR("chdir");
                 break;
             
-            case 'o':
-                out = make_file(optarg);
+            // case 'o':
+            //     out = make_file(optarg);
         }
     }
     return EXIT_SUCCESS;
