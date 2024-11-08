@@ -1,3 +1,5 @@
+// KOPIOWANIE PLIKÓW OKREŚLONYCH ŚCIEŻKAMI
+
 #define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>

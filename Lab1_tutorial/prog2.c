@@ -52,7 +52,7 @@ void scan_dir() {
 
 int main(int argc, char* argv[]) {
     char path[MAX_PATH];
-    if(getcwd(path, MAX_PATH) == NULL) {
+    if(getcwd(path, MAX_PATH) == NULL) { // pobranie ścieżki do bierzącego katalogu
         ERR("getcwd");
     }
 
