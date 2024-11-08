@@ -95,7 +95,43 @@ void show_stage2(const char *const path, const struct stat *const stat_buf)
     }
 }
 
-void write_stage3(const char *const path, const struct stat *const stat_buf) {}
+void write_stage3(const char *const path, const struct stat *const stat_buf) 
+{
+    int fd;
+    if((fd = open(path, O_RDWR | O_APPEND)) == -1) ERR("open");
+
+    char buffer[BUF_SIZE];
+    ssize_t bytes_read;
+
+    while((bytes_read = bulk_read(fd, buffer, BUF_SIZE)) > 0) 
+    {
+        if(fwrite(buffer, 1, bytes_read, stdout) < bytes_read)
+        {
+            close(fd);
+            ERR("fwrite");
+        }
+    }
+    if(bytes_read < 0) 
+    {
+        close(fd);
+        ERR("bulk_read");
+    }
+    
+    while(fgets(buffer, BUF_SIZE, stdin) != NULL)
+    {
+        if(strcmp(buffer, "\n") == 0) 
+            break;
+
+        ssize_t bytes_written = bulk_write(fd, buffer, strlen(buffer));
+        if(bytes_written < 0)
+        {
+            close(fd);
+            ERR("bulk_write");
+        }
+    }
+
+    if(close(fd) == -1) ERR("close");
+}
 
 void walk_stage4(const char *const path, const struct stat *const stat_buf) {}
 
