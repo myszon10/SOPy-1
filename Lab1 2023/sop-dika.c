@@ -12,6 +12,7 @@
 
 #define ERR(source) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(EXIT_FAILURE))
 #define BUF_SIZE 256
+#define MAXFD 20
 
 ssize_t bulk_read(int fd, char *buf, size_t count)
 {
@@ -133,7 +134,30 @@ void write_stage3(const char *const path, const struct stat *const stat_buf)
     if(close(fd) == -1) ERR("close");
 }
 
-void walk_stage4(const char *const path, const struct stat *const stat_buf) {}
+int walk(const char* path, const struct stat *s, int type, struct FTW *f) 
+{
+    switch(type)
+    {
+        case FTW_D:
+        case FTW_DP: // FTW_DP - obsługa typu directory dla przeszukiwania DFS (FTW_DEPTH)
+            printf("%s type: directory\n", path);
+            break;
+        case FTW_F:
+            printf("%s type: file\n", path);
+            break;
+        default:
+            printf("%s type: other\n", path);
+    }
+    return 0;
+}
+
+void walk_stage4(const char *const path, const struct stat *const stat_buf) 
+{
+    if(nftw(path, walk, MAXFD, FTW_PHYS | FTW_DEPTH) == -1)
+    {
+        ERR("nftw");
+    }
+}
 
 int interface_stage1() 
 {
