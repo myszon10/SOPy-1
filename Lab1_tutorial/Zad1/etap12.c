@@ -23,9 +23,8 @@ void scan_dir()
         if(lstat(dp->d_name, &filestat)) ERR("lstat");
 
         printf("%s %ld\n", dp->d_name, filestat.st_size);
-
-        if(errno != 0) ERR("readdir");
     }
+    if(errno != 0) ERR("readdir");
     if(closedir(dirp)) ERR("closedir");
 }
 
