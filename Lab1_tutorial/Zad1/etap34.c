@@ -9,6 +9,8 @@
 
 #define ERR(source) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(EXIT_FAILURE))
 
+#define MAX_PATH 101
+
 void scan_dir()
 {
     DIR *dirp;
@@ -31,8 +33,23 @@ void scan_dir()
 
 int main(int argc, char* argv[]) 
 {
-    printf("LISTA PLIKÓW:\n");
-    scan_dir();
+    int c;
+    char path[MAX_PATH];
+    if(getcwd(path, MAX_PATH) == NULL) ERR("getcwd");
 
+    while((c = getopt(argc, argv, "p:")) != -1) 
+    {
+        switch(c)
+        {
+            case 'p':
+                if(chdir(optarg)) ERR("chdir");
+        
+                printf("SICEZKA:\n%s\n", optarg);
+                scan_dir();
+
+                if(chdir(path)) ERR("chdir");
+                break;
+        }
+    }
     return EXIT_SUCCESS;
 }
