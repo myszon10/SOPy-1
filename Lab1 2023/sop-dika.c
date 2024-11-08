@@ -13,10 +13,6 @@
 #define ERR(source) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(EXIT_FAILURE))
 #define BUF_SIZE 256
 
-char buffer[BUF_SIZE];
-struct stat stats;
-
-
 ssize_t bulk_read(int fd, char *buf, size_t count)
 {
     ssize_t c;
@@ -51,7 +47,53 @@ ssize_t bulk_write(int fd, char *buf, size_t count)
     return len;
 }
 
-void show_stage2(const char *const path, const struct stat *const stat_buf) {}
+void show_stage2(const char *const path, const struct stat *const stat_buf)
+{
+    if(S_ISREG(stat_buf->st_mode))
+    {
+        printf("--------\nType: file\n");
+        printf("File size: %ld\n--------\n", stat_buf->st_size);
+
+        int fd;
+        if((fd = open(path, O_RDONLY)) == -1) ERR("open");
+
+        char buffer[BUF_SIZE];
+        ssize_t bytes_read;
+
+        while((bytes_read = bulk_read(fd, buffer, BUF_SIZE)) > 0) // sprawdzanie, czy bytes_read > 0
+        {
+            // 1 - rozmiar jednego elementu danych, bytes_read - liczba bajtów do wpisania
+            // fwrite zwraca liczbę bajtów, które zostały wpisane do strumienia
+            if(fwrite(buffer, 1, bytes_read, stdout) < bytes_read)
+            {
+                close(fd);
+                ERR("fwrite");
+            }
+        }
+        if(bytes_read < 0) ERR("bulk_read");
+        if(close(fd) == -1) ERR("close");
+    }
+    else if(S_ISDIR(stat_buf->st_mode))
+    {
+        printf("--------\nType: directory\n--------\n");
+        DIR *dirp;
+        struct dirent *dp;
+
+        if((dirp = opendir(path)) == NULL) ERR("opendir");
+
+        while((dp = readdir(dirp)) != NULL)
+        {
+            errno = 0;
+            printf("%s\n", dp->d_name);
+        }
+        if(errno != 0) ERR("readdir"); // readdir zwrócił NULL, ale nie przez koniec pliku -> jakiś błąd
+        if(closedir(dirp) != 0) ERR("closedir");
+    }
+    else
+    {
+        printf("Type: unknown\n");
+    }
+}
 
 void write_stage3(const char *const path, const struct stat *const stat_buf) {}
 
@@ -59,6 +101,9 @@ void walk_stage4(const char *const path, const struct stat *const stat_buf) {}
 
 int interface_stage1() 
 {
+    char buffer[BUF_SIZE];
+    struct stat stats;
+
     printf("1. show\n2. write\n3. walk\n4. exit\n");
     
     if(fgets(buffer, BUF_SIZE, stdin) == NULL) ERR("fgets");
@@ -83,7 +128,7 @@ int interface_stage1()
     buffer[strlen(buffer) - 1] = '\0'; // ostatni znak bufferu był \n, zamieniamy go na znak końca stringa 
     if(stat(buffer, &stats) == -1) 
     {
-        fprintf(stderr, "File does not exist");
+        fprintf(stderr, "File does not exist\n");
         return 1;
     }
     
