@@ -20,6 +20,7 @@ char **extensions;
 int ext_count;
 int ext_size;
 int depth;
+FILE* buff;
 
 char* get_file_extention(const char *filename)
 {
@@ -39,17 +40,35 @@ int walk(const char* name, const struct stat *s, int type, struct FTW *f)
     {
         if(strcmp(get_file_extention(name), extensions[i]) == 0)
         {
-            printf("%s %ld\n", name, s->st_size);
+            fprintf(buff, "%s %ld\n", name, s->st_size);
         }
     }
     return 0;
+}
+
+FILE* make_file(const char* name)
+{
+    FILE* s1;
+    umask(~0777);
+    if((s1 = fopen(name, "w+")) == NULL) ERR("fopen");
+    return s1;
 }
 
 int main(int argc, char* argv[]) 
 {
     int c;
     depth = 1;
-    char path[MAX_PATH];
+    char path[MAX_PATH]; // ścieżka do przeszukania
+    buff = stdout;
+    
+    const char *var_name = "L1_OUTPUTFILE";
+    const char *var_value = "/tmp/L1_output.txt";
+
+    // tworzenie stringa NAZWA=ścieżka dla putenv
+    char *env_var = malloc(strlen(var_name) + strlen(var_value) + 2); // 2 znaki \0
+    if(env_var == NULL) ERR("malloc");
+    sprintf(env_var, "%s=%s", var_name, var_value);
+
 
     if(getcwd(path, MAX_PATH) == NULL) ERR("getcwd");
 
@@ -57,7 +76,7 @@ int main(int argc, char* argv[])
     ext_count = 0; // aktualna liczba rozszerzeń
     ext_size = 2; // aktualny rozmiar tablicy
 
-    while((c = getopt(argc, argv, "p:e:d:")) != -1)
+    while((c = getopt(argc, argv, "p:e:d:o")) != -1)
     {
         switch(c) 
         {
@@ -80,18 +99,26 @@ int main(int argc, char* argv[])
                 break;
             case 'd':
                 depth = atoi(optarg);
+                break;
+            case 'o':
+                if(putenv(env_var) != 0)
+                {
+                    free(env_var);
+                    ERR("putenv");
+                }
+                buff = make_file(var_value);
         }
     }
 
     optind = 1;
 
-    while((c = getopt(argc, argv, "p:e:d:")) != -1)
+    while((c = getopt(argc, argv, "p:e:d:o")) != -1)
     {
         if(c == 'p')
         {
             if(chdir(optarg)) ERR("chdir");
             
-            fprintf(stdout, "path: %s\n", optarg);
+            fprintf(buff, "path: %s\n", optarg);
 
             if(nftw(optarg, walk, MAXFD, FTW_PHYS | FTW_DEPTH) == -1)
             {
@@ -106,6 +133,29 @@ int main(int argc, char* argv[])
         free(extensions[i]);
 
     free(extensions);
+    // nie zwalniamy ręcznie env_var, bo może to skutkować straceniem zmiennej L1_OUTPUTFILE
+    //free(env_var);
+
+    if(buff != stdout)
+    {
+        char *output_path = getenv("L1_OUTPUTFILE");
+        if(output_path) 
+        {
+            printf("L1_OUTPUTFILE = %s\n", output_path);
+        }
+        else 
+        {
+            ERR("L1_OUTPUTFILE not set");
+        }
+        fclose(buff);
+    }
 
     return EXIT_SUCCESS;
 }
+
+/*
+Nie wiedziałem dokładnie o co chodzi z ustawieniem zmiennej środowiskowej, bo nie da się tylko z poziomu kodu C
+ustawić globalnej zmiennej środowiskowej, zmienna ta istnieje tylko na czas działania procesu. Program tworzy
+za to plik /tmp/L1_output.txt który można zcatować po wykonaniu programu, a końcówka kodu pokazuje, że na 
+czas działania programu zmienna środowiskowa L1_OUTPUTFILE ma ustawioną ścieżkę /tmp/L1_output.txt
+*/
