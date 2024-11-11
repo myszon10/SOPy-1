@@ -1,0 +1,28 @@
+--- LAB0 TUTORIAL ---
+3. wczytywanie stringa ograniczonej długości - fgets
+8. zmienne środowiskowe, pobieranie - getenv i wpisywanie - putenv
+9. obsługa błędów, EINVAL - błąd złej wartości w zmiennej środowiskowej
+
+--- LAB1 TUTORIAL ---
+1. zliczanie plików/katalogów/linków/innych w katalogu roboczym
+2. zliczanie plików/katalogów/linków/innych w katalogach określonych ścieżką
+3. rekurencyjne zliczanie typów plików - funkcja nftw
+4. tworzenie pliku o określonych w argumentach nazwie, rozmiarze i uprawnieniach, 10% pliku w losowych miejscach ma znaki A-Z 
+5. niskopoziomowe kopiowanie plików określonych ścieżkami
+
+--- LAB1 ZAD1 ---
+1. etap12 - wypisanie nazw i wielkości plików w katalogu roboczym
+2. etap34 - ewentualne wypisanie wyniku do (nowo utworzonego) pliku o nazwie w argumencie
+3. etap56 - to samo ale niskopoziomowe, nie działa
+
+--- LAB1 ZAD2 ---
+1. etap1 - wypisanie zawartości katalogów o ścieżkach z argumentów
+2. etap2 - filtrowanie po rozszerzeniach pliku 
+3. etap3 - wyszukiwanie rekurencyjne z głębokością podaną w argumencie
+4. etap4 - zapisanie wyniku w zmiennej środowiskowej (działa średnio)
+
+--- LAB1 2023 ---
+1. etap1 - interfejs CLI
+2. etap2 - wypisanie zawartości ścieżki - jeśli katalog to nazwy plików, jeśli plik to rozmiar i zawartość
+3. etap3 - dopisanie do pliku o podanej ścieżce na koniec nową zawartość, funkcje niskopoziomowe
+4. etap4 - rekurencyjne wyświetlanie zawartości katalogu, funkcja nftw
