@@ -29,3 +29,4 @@
 
 --- LAB2 TUTORIAL ---
 1. prog13b - tworzenie n procesów potomnych, każdy czeka 5-10 sekund, wyświetla swoje PID i się kończy
+2. prog14c - tworzenie n procesów potomnych, każde dziecko l razy śpi 5-10 sekund, po czym jeśli ostatni sygnał to SIGUSR1, to wyświetla SUCCESS, a jeśli SIGUSR2 to Failed
