@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-Wall -fsanitize=address,undefined
 LDFLAGS=-fsanitize=address,undefined
 
-all: prog13a prog13b prog14 prog15 prog16a
+all: prog13a prog13b prog14 prog15 prog16a prog16b
 
 prog13a:
 	gcc $(CFLAGS) -o prog13a prog13a.c
@@ -19,7 +19,10 @@ prog15:
 prog16a:
 	gcc $(CFLAGS) -o prog16a prog16a.c
 
+prog16b:
+	gcc $(CFLAGS) -o prog16b prog16b.c
+
 .PHONY: clean all
 
 clean:
-	rm prog13a prog13b prog14 prog15 prog16a
+	rm prog13a prog13b prog14 prog15 prog16a prog16b

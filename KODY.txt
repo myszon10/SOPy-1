@@ -32,3 +32,4 @@
 2. prog14 - tworzenie n procesów potomnych, każde dziecko l razy śpi 5-10 sekund, po czym jeśli ostatni sygnał to SIGUSR1, to wyświetla SUCCESS, a jeśli SIGUSR2 to Failed
 3. prog15 - Program tworzy jeden proces potomny, który co m mikrosekund wysyła do rodzica sygnał SIGUSR1, a co p-ty raz sygnał SIGUSR2. Rodzic czeka na sygnał SIGUSR2, zlicza odebrane sygnały SIGUSR2 i wyświetla ich liczbę. 
 4. prog16a - dziecko wysyła SIGUSR1 cyklicznie do rodzica, rodzic liczy liczbę odebranych sygnałów, przy okazji tworzy plik o podanej nazwie i wypełnia go blokami określonych rozmiarów losowych danych (problem z partial readem)
+5. prog16b - to samo co 16a ale z bulk funkcjami i TEMP_FAILURE_RETRY, nie ma problemów z partial readem
