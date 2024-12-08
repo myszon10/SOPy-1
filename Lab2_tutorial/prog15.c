@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +11,7 @@
     (fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), perror(source), kill(0, SIGKILL), exit(EXIT_FAILURE))
 
 volatile sig_atomic_t last_signal = 0;
+volatile sig_atomic_t sigusr2_count = 0; // Licznik sygnałów SIGUSR2
 
 void sethandler(void (*f)(int), int sigNo)
 {
@@ -20,7 +22,12 @@ void sethandler(void (*f)(int), int sigNo)
         ERR("sigaction");
 }
 
-void sig_handler(int sig) { last_signal = sig; }
+void sig_handler(int sig) 
+{ 
+    last_signal = sig;
+    if (sig == SIGUSR2)
+        sigusr2_count++; 
+}
 
 void sigchld_handler(int sig)
 {
@@ -61,16 +68,18 @@ void child_work(int m, int p) // p - co ile sygnałów SIGUSR1 wysyłamy sygnał
 
 void parent_work(sigset_t oldmask)
 {
-    int count = 0;
+    int printed_count = 0;
     while (1)
     {
         last_signal = 0;
-        while (last_signal != SIGUSR2)
-            // sigsuspend wstrzymuje działanie kodu do momentu odebrania sygnału
-            // tymczasowo odblokowuje SIGUSR1 i SIGUSR2 (nałożoną maskę)
-            sigsuspend(&oldmask); 
-        count++;
-        printf("[PARENT] received %d SIGUSR2\n", count);
+        sigsuspend(&oldmask);
+        // sigsuspend wstrzymuje działanie kodu do momentu odebrania sygnału
+        // tymczasowo odblokowuje SIGUSR1 i SIGUSR2 (nałożoną maskę)
+        if (printed_count != sigusr2_count) // lub while(last_signal != SIGUSR2)
+        {
+            printf("[PARENT] received %d SIGUSR2\n", printed_count);
+            printed_count = sigusr2_count;
+        }
     }
 }
 

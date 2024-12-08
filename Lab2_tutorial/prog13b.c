@@ -27,7 +27,7 @@ void create_children(int n)
         if (!s)
         {
             child_work(n);
-            //exit(EXIT_SUCCESS);
+            exit(EXIT_SUCCESS);
         }
     }
 }
