@@ -1,0 +1,33 @@
+Napisz program, który za pomocą wielu procesów, będzie równolegle transformował tekst we wskazanym pliku tekstowym.
+
+Program przyjmuje dwa parametry: plik f i liczbę procesów potomnych n (0 < n < 10).
+
+Zabroniony jest busy-waiting! Busy-waiting = etap do poprawki.
+Można używać tylko niskopoziomowego API do czytania/pisania do plików (open/close).
+Tam gdzie się pojawia obsługa sygnałów, poprawnie trzeba obsługiwać przerwania sygnałami.
+W szczególności warto sobie przygotować wcześniej własną funkcję "sleep" (śpiącą z dokładnością do milisekund lub większą), najlepiej używającą nanosleep, która w momencie przerwania, dosypia niedospany czas.
+Funkcje obsługujące sygnały muszą być lekkie. To jest najlepiej jeżeli jedyna ich zawartość, to ustawienie jakiejś flagi last_sig.
+
+1.
+Uruchom n procesów potomnych. 
+Każdy proces potomny wypisuje swój PID i kończy pracę.
+Proces główny czeka na zakończenie pracy procesów potomnych i kończy pracę.
+
+2.
+Proces główny wczytuje plik f.
+Proces główny rozdziela zawartość pliku między dzieci (w miarę równo, ostatni proces może mieć np. mniej znaków do przetworzenia).
+Każde z dzieci może mieć w swojej pamięci wyłącznie swój fragment do przetworzenia.
+Procesy potomne czekają na otrzymanie sygnału SIGUSR1. Po jego otrzymaniu wypisują swój PID oraz przydzielony fragment pliku i kończą pracę.
+Proces główny po stworzeniu wszystkich procesów dzieci wysyła do wszystkich procesów potomnych sygnał SIGUSR1.
+
+3.
+Procesy dzieci po otrzymaniu sygnału SIGUSR1 rozpoczynają przetwarzanie pliku znak po znaku:
+Co drugi znak z zakresu [a-zA-Z] jest zamieniany na wielką literę, jeżeli był małą literą lub na małą literę, jeżeli był wielką literą. Pozostałe znaki pozostawiane są bez zmian.
+Ala ma kota -> alA mA kOtA
+Po przetworzeniu znaku proces śpi 0.25 sekundy i dopisuje go do pliku o nazwie $"{f}-{i}", gdzie i to liczba porządkowa procesu (od 1 do n).
+
+4.
+Procesy obsługują poprawnie sygnał SIGINT:
+Po otrzymaniu sygnału SIGINT (Ctrl-C) rodzic rozsyła sygnał SIGINT do wszystkich procesów dzieci
+Proces dziecka po otrzymaniu sygnału SIGINT zamyka wszystkie otwarte zasoby i kończy pracę.
+W przypadku przerwania snu dziecka, dziecko dosypia pozostały czas i dopisuje do swojego pliku ostatnio przetworzony znak.
