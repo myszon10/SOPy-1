@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <time.h>
@@ -63,55 +62,21 @@ void usage(int argc, char* argv[])
     exit(EXIT_FAILURE);
 }
 
-void SLEEP() {
-    struct timespec t = {0, 250 * 1000 * 1000};
-    nanosleep(&t, NULL);
-}
-
-void parent_sigint_handler(int sig) {
-    kill(0, SIGINT);
-    exit(EXIT_SUCCESS);
-}
-
-volatile sig_atomic_t got_sigint = 0;
-void child_sigint_handler(int sig) {
-    got_sigint = 1;
-}
+//void SLEEP() {
+//    struct timespec t = {0, 250 * 1000 * 1000};
+//    nanosleep(t, NULL);
+//}
 
 void child_sigusr1_handler(int sig) {
     // noop
 }
 
-void child_work(char *file, int nr, char *buf, ssize_t buf_size) {
+void child_work(char *buf, ssize_t buf_size) {
     sigset_t mask;
     sigemptyset(&mask);
     sigsuspend(&mask); // Czeka na dowolny sygnał - tu SIGUSR1
 
-    char filename[32];
-    sprintf(filename, "%s-%d", file, nr);
-    int fd;
-    if((fd = TEMP_FAILURE_RETRY(open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_APPEND, 0666))) < 0) {
-        ERR("open");
-    }
-
-    for(int i = 0; i < buf_size && !got_sigint; i++) {
-        if(isalpha(buf[i]) && i % 2 == 0) {
-            if(islower(buf[i])) {
-                buf[i] = toupper(buf[i]);
-            } else {
-                buf[i] = tolower(buf[i]);
-            }
-        }
-        SLEEP();
-        if(TEMP_FAILURE_RETRY(write(fd, buf + i, 1)) <= 0) {
-            ERR("write");
-        }
-    }
-
-    if(TEMP_FAILURE_RETRY(close(fd))) {
-        ERR("close");
-    }
-    free(buf);
+    bulk_write(1, buf, buf_size); // 1 to fd stdout
 }
 
 int main(int argc, char* argv[])
@@ -142,9 +107,9 @@ int main(int argc, char* argv[])
     if(!buf) {
         ERR("malloc");
     }
+    pid_t children[n];
 
     sethandler(child_sigusr1_handler, SIGUSR1);
-    sethandler(child_sigint_handler, SIGINT);
 
     sigset_t mask, oldmask;
     sigemptyset(&mask);
@@ -159,11 +124,12 @@ int main(int argc, char* argv[])
         pid = fork();
         switch(pid) {
         case 0:
-            child_work(argv[1], i, buf, child_buf_size);
+            child_work(buf, child_buf_size);
             exit(EXIT_SUCCESS);
         case -1:
             ERR("fork");
         default:
+            children[i] = pid;
             break;
         }
     }
@@ -171,8 +137,6 @@ int main(int argc, char* argv[])
 
     sigprocmask(SIG_SETMASK, &oldmask, NULL);
     sethandler(SIG_IGN, SIGUSR1);
-    sethandler(parent_sigint_handler, SIGINT);
-
     kill(0, SIGUSR1);
 
     while(wait(NULL) > 0);

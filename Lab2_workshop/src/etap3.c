@@ -68,16 +68,6 @@ void SLEEP() {
     nanosleep(&t, NULL);
 }
 
-void parent_sigint_handler(int sig) {
-    kill(0, SIGINT);
-    exit(EXIT_SUCCESS);
-}
-
-volatile sig_atomic_t got_sigint = 0;
-void child_sigint_handler(int sig) {
-    got_sigint = 1;
-}
-
 void child_sigusr1_handler(int sig) {
     // noop
 }
@@ -94,7 +84,7 @@ void child_work(char *file, int nr, char *buf, ssize_t buf_size) {
         ERR("open");
     }
 
-    for(int i = 0; i < buf_size && !got_sigint; i++) {
+    for(int i = 0; i < buf_size; i++) {
         if(isalpha(buf[i]) && i % 2 == 0) {
             if(islower(buf[i])) {
                 buf[i] = toupper(buf[i]);
@@ -102,16 +92,15 @@ void child_work(char *file, int nr, char *buf, ssize_t buf_size) {
                 buf[i] = tolower(buf[i]);
             }
         }
-        SLEEP();
         if(TEMP_FAILURE_RETRY(write(fd, buf + i, 1)) <= 0) {
             ERR("write");
         }
+        SLEEP();
     }
 
     if(TEMP_FAILURE_RETRY(close(fd))) {
         ERR("close");
     }
-    free(buf);
 }
 
 int main(int argc, char* argv[])
@@ -144,7 +133,6 @@ int main(int argc, char* argv[])
     }
 
     sethandler(child_sigusr1_handler, SIGUSR1);
-    sethandler(child_sigint_handler, SIGINT);
 
     sigset_t mask, oldmask;
     sigemptyset(&mask);
@@ -171,8 +159,6 @@ int main(int argc, char* argv[])
 
     sigprocmask(SIG_SETMASK, &oldmask, NULL);
     sethandler(SIG_IGN, SIGUSR1);
-    sethandler(parent_sigint_handler, SIGINT);
-
     kill(0, SIGUSR1);
 
     while(wait(NULL) > 0);
