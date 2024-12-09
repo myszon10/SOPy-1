@@ -33,3 +33,9 @@
 3. prog15 - Program tworzy jeden proces potomny, który co m mikrosekund wysyła do rodzica sygnał SIGUSR1, a co p-ty raz sygnał SIGUSR2. Rodzic czeka na sygnał SIGUSR2, zlicza odebrane sygnały SIGUSR2 i wyświetla ich liczbę. 
 4. prog16a - dziecko wysyła SIGUSR1 cyklicznie do rodzica, rodzic liczy liczbę odebranych sygnałów, przy okazji tworzy plik o podanej nazwie i wypełnia go blokami określonych rozmiarów losowych danych (problem z partial readem)
 5. prog16b - to samo co 16a ale z bulk funkcjami i TEMP_FAILURE_RETRY, nie ma problemów z partial readem
+
+--- LAB2 WORKSHOP ---
+1. etap1 - tworzenie n procesów, każdy wypisuje swój PID i się kończy
+2. etap2 - wczytanie pliku f, rozdzielenie zawartości po równo między dzieci, po utworzeniu dzieci rodzic wysyła SIGUSR1, dzieci po otrzymaniu sygnału wypisują PID i fragment pliku
+3. etap3 - po SIGUSR1 dzieci przetwarzają plik (odwracają wielkość co drugiego znaku), po każdym znaku śpią 0.25s i wpisują go do pliku
+3. etap4_1 - sygnał SIGINT jest rozsyłany do dzieci, które zapisują treść pliku i kończą działanie
