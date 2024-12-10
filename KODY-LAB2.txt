@@ -1,0 +1,21 @@
+jeśli wykona się if(pid == 0) to jestem dzieckiem
+
+--- LAB2 TUTORIAL ---
+1. prog13b - tworzenie n procesów potomnych, każdy czeka 5-10 sekund, wyświetla swoje PID i się kończy
+2. prog14 - tworzenie n procesów potomnych, każde dziecko l razy śpi 5-10 sekund, po czym jeśli ostatni sygnał to SIGUSR1, to wyświetla SUCCESS, a jeśli SIGUSR2 to Failed
+3. prog15 - Program tworzy jeden proces potomny, który co m mikrosekund wysyła do rodzica sygnał SIGUSR1, a co p-ty raz sygnał SIGUSR2. Rodzic czeka na sygnał SIGUSR2, zlicza odebrane sygnały SIGUSR2 i wyświetla ich liczbę. 
+4. prog16a - dziecko wysyła SIGUSR1 cyklicznie do rodzica, rodzic liczy liczbę odebranych sygnałów, przy okazji tworzy plik o podanej nazwie i wypełnia go blokami określonych rozmiarów losowych danych (problem z partial readem)
+5. prog16b - to samo co 16a ale z bulk funkcjami i TEMP_FAILURE_RETRY, nie ma problemów z partial readem
+
+--- LAB2 ZAD1 ---
+1. etap1 - tworzenie n procesów potomnych, losowanie s i wypisanie na ekran odpowiednich n, s (s jest losowane) 
+2. etap2 - każdy proces potomny tworzy plik o nazwie swojego pid a do pliku wpisuje jeden blok rozmiaru s z liczbami n, proces rodzic przez 1s co 10ms wysyła SIGUSR1
+3. etap3 - procesy dzieci zliczają liczbę odebranych sygnałów SIGUSR1 i po każdym odebraniu wpisują na ekran swój PID z licznikiem, nadal tylko jeden blok do pliku
+etap3_better - bez dead waitingu
+4. etap4 - procesy dzieci po każdym sygnale dopisują odpowiedni blok do pliku
+
+--- LAB2 WORKSHOP ---
+1. etap1 - tworzenie n procesów, każdy wypisuje swój PID i się kończy
+2. etap2 - wczytanie pliku f, rozdzielenie zawartości po równo między dzieci, po utworzeniu dzieci rodzic wysyła SIGUSR1, dzieci po otrzymaniu sygnału wypisują PID i fragment pliku
+3. etap3 - po SIGUSR1 dzieci przetwarzają plik (odwracają wielkość co drugiego znaku), po każdym znaku śpią 0.25s i wpisują go do pliku
+3. etap4_1 - sygnał SIGINT jest rozsyłany do dzieci, które zapisują treść pliku i kończą działanie

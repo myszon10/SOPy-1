@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <signal.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -69,8 +70,10 @@ void SLEEP() {
 }
 
 void parent_sigint_handler(int sig) {
+    sethandler(SIG_IGN, SIGINT);
     kill(0, SIGINT);
-    exit(EXIT_SUCCESS);
+    sethandler(SIG_DFL, SIGINT);
+    //exit(EXIT_SUCCESS);
 }
 
 volatile sig_atomic_t got_sigint = 0;
@@ -83,9 +86,17 @@ void child_sigusr1_handler(int sig) {
 }
 
 void child_work(char *file, int nr, char *buf, ssize_t buf_size) {
+    // sigset_t mask;
+    // sigemptyset(&mask);
+    // sigsuspend(&mask); // Czeka na dowolny sygnał - tu SIGUSR1
+
+    // "Poprawniejszy sposób"
     sigset_t mask;
-    sigemptyset(&mask);
-    sigsuspend(&mask); // Czeka na dowolny sygnał - tu SIGUSR1
+    sigfillset(&mask);
+    sigdelset(&mask, SIGUSR1);
+    sigdelset(&mask, SIGINT);
+    sigsuspend(&mask);
+
 
     char filename[32];
     sprintf(filename, "%s-%d", file, nr);
@@ -175,6 +186,6 @@ int main(int argc, char* argv[])
 
     kill(0, SIGUSR1);
 
-    while(wait(NULL) > 0);
+    while(TEMP_FAILURE_RETRY(wait(NULL)) > 0);
     return EXIT_SUCCESS;
 }
