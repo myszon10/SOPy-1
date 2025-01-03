@@ -2,3 +2,5 @@
 prog17 - tworzenie wątków, każdy wątek liczy pi za pomocą monte carlo, łączenie wątków i finalny wynik, losowy seed dla każdego wątku
 
 prog18 - obliczanie wartości oczekiwanej z kulkami, odłączone wątki zrzucają kulki i aktualizują liczniki chronione mutexami, wątek główny monitoruje postęp i liczy wartość oczekiwaną
+
+prog19 - obsługa sygnałów w osobnym wątku, SIGINT usuwa losowy element z listy, SIGQUIT kończy program, współdzielone dane chronione mutexami, wątek główny co sekundę wyświetla listę
