@@ -4,3 +4,5 @@ prog17 - tworzenie wątków, każdy wątek liczy pi za pomocą monte carlo, łą
 prog18 - obliczanie wartości oczekiwanej z kulkami, odłączone wątki zrzucają kulki i aktualizują liczniki chronione mutexami, wątek główny monitoruje postęp i liczy wartość oczekiwaną
 
 prog19 - obsługa sygnałów w osobnym wątku, SIGINT usuwa losowy element z listy, SIGQUIT kończy program, współdzielone dane chronione mutexami, wątek główny co sekundę wyświetla listę
+
+prog20 - symulacja życia studentów: każdy student to wątek, przechodzący przez kolejne lata studiów. Wątek główny losowo wyrzuca studentów, anulując ich wątki. Liczniki studentów na każdym roku chronione mutexami, anulowanie wątków obsługiwane przez cleanup handler
