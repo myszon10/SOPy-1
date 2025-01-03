@@ -1,0 +1,2 @@
+--- LAB3 TUTORIAL ---
+prog17 - tworzenie wątków, każdy wątek liczy pi za pomocą monte carlo, łączenie wątków i finalny wynik, losowy seed dla każdego wątku
