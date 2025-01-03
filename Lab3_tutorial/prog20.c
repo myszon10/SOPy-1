@@ -114,7 +114,7 @@ void *student_life(void *voidArgs)
         increment_counter(&args);
         pthread_cleanup_push(decrement_counter, &args);
         msleep(1000); // w tym momencie wątek zacznie się zamykać, nanosleep to punkt anulowania
-        pthread_cleanup_pop(1);
+        pthread_cleanup_pop(1); // 1 - wywołanie cleanup handlera przy zdjęciu ze stosu
     }
     increment_counter(&args); // dodanie inżynierów
     return NULL;
