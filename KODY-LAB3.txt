@@ -6,3 +6,10 @@ prog18 - obliczanie wartości oczekiwanej z kulkami, odłączone wątki zrzucaj�
 prog19 - obsługa sygnałów w osobnym wątku, SIGINT usuwa losowy element z listy, SIGQUIT kończy program, współdzielone dane chronione mutexami, wątek główny co sekundę wyświetla listę
 
 prog20 - symulacja życia studentów: każdy student to wątek, przechodzący przez kolejne lata studiów. Wątek główny losowo wyrzuca studentów, anulując ich wątki. Liczniki studentów na każdym roku chronione mutexami, anulowanie wątków obsługiwane przez cleanup handler
+
+--- ZAD1 ---
+n wątków, każdy wątek losuje mnożnik M [2-100]. Wątek główny co 0.1s zwiększa licznik L o jeden (od 1). Wątki sprawdzają, czy L % M == 0. Chroniony dostęp do L, wszystkie wątki muszą zdążyć sprawdzić podzielność. Program kończy się po otrzymaniu SIGINT, po odebraniu sygnału wątki poboczne się kończą a wątek główny je łączy
+
+etap1 - tworzenie n wątków, każdy wątek wypisuje *, wątęk główny czeka na zakończenie wszystkich wątków
+
+etap2 - wątki poboczne losują swoje mnożniki na ekran

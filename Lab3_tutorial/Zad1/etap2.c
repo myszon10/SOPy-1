@@ -9,32 +9,47 @@
 
 #define ERR(source) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(EXIT_FAILURE))
 
+typedef unsigned int UINT;
+typedef struct thread_args
+{
+    pthread_t tid;
+    UINT seed;
+    int M;
+} threadArgs_t;
+
 void ReadArguments(int argc, char **argv, int *threadCount);
-void* thread_counter();
+void* thread_counter(void* voidArgs);
 
 int main(int argc, char **argv) 
 {
     int threadCount;
     ReadArguments(argc, argv, &threadCount);
     
-    pthread_t *threads = (pthread_t*)malloc(sizeof(pthread_t) * threadCount);
-    if(threads == NULL)
+    threadArgs_t *threadArgs = (threadArgs_t*)malloc(sizeof(threadArgs_t) * threadCount);
+    if(threadArgs == NULL)
         ERR("Malloc error for thread arguments");
+
+    srand(time(NULL));
+    for(int i = 0; i < threadCount; i++)
+    {
+        threadArgs[i].seed = rand();
+    }
 
     for(int i = 0; i < threadCount; i++) 
     {
-        int err = pthread_create(&threads[i], NULL, thread_counter, NULL);
+        int err = pthread_create(&(threadArgs[i].tid), NULL, thread_counter, &threadArgs[i]);
         if(err != 0)
             ERR("Couldn't create thread");
     }
 
     for(int i = 0; i < threadCount; i++) 
     {
-        int err = pthread_join(threads[i], NULL);
+        int err = pthread_join(threadArgs[i].tid, NULL);
         if(err != 0)
             ERR("Can't join with a thread");
     }
-    free(threads);
+    printf("\n");
+    free(threadArgs);
 }
 
 void ReadArguments(int argc, char **argv, int *threadCount) 
@@ -56,8 +71,12 @@ void ReadArguments(int argc, char **argv, int *threadCount)
     }
 }
 
-void* thread_counter()
+void* thread_counter(void *voidArgs)
 {
-    printf("*\n");
+    threadArgs_t *args = (threadArgs_t *) voidArgs;
+    args->M = rand_r(&(args->seed)) % 99 + 2;
+
+    printf("%d ", args->M);
+
     return NULL;
 }
