@@ -13,3 +13,5 @@ n wątków, każdy wątek losuje mnożnik M [2-100]. Wątek główny co 0.1s zwi
 etap1 - tworzenie n wątków, każdy wątek wypisuje *, wątęk główny czeka na zakończenie wszystkich wątków
 
 etap2 - wątki poboczne losują swoje mnożniki na ekran
+
+etap3 - wątek główny wykonuje odliczanie, poboczne sprawdzają podzielność, bez synchronizacji/ochrony licznika
