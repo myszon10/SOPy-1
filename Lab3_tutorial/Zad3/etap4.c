@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <stdarg.h>
 #include <stddef.h>
+//#include <signal.h>
 #include <sys/param.h> // funkcja MIN
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +24,8 @@ typedef struct dogArgs
     int *firstPlace, *secondPlace, *thirdPlace;
     pthread_mutex_t *mxPodium;
     pthread_mutex_t *mxFinished;
+    bool *quitFlag;
+    pthread_mutex_t *mxQuitFlag;
 } dogArgs_t;
 
 void ReadArguments(int argc, char **argv, int *n, int *m);
@@ -58,6 +61,15 @@ int main(int argc, char **argv)
     pthread_mutex_t mxPodium = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_t mxFinished = PTHREAD_MUTEX_INITIALIZER;
 
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGINT);
+    if(pthread_sigmask(SIG_BLOCK, &mask, NULL))
+        ERR("sigmask");
+
+    bool quitFlag = false;
+    pthread_mutex_t mxQuitFlag = PTHREAD_MUTEX_INITIALIZER;
+
     srand(time(NULL));
     for(int i = 0; i < m; i++)
     {
@@ -72,6 +84,8 @@ int main(int argc, char **argv)
         dogs[i].thirdPlace = &thirdPlace;
         dogs[i].mxPodium = &mxPodium;
         dogs[i].mxFinished = &mxFinished;
+        dogs[i].quitFlag = &quitFlag;
+        dogs[i].mxQuitFlag = &mxQuitFlag;
     }
 
     for(int i = 0; i < m; i++) 
@@ -83,6 +97,15 @@ int main(int argc, char **argv)
 
     while(dogsFinished < m)
     {
+        sigset_t pending;
+        if(sigpending(&pending) == 0 && sigismember(&pending, SIGINT))
+        {
+            pthread_mutex_lock(&mxQuitFlag);
+            quitFlag = true;
+            pthread_mutex_unlock((&mxQuitFlag));
+            break;
+        }
+
         thread_sleep(1000);
         printf("Track: [");
         for(int i = 0; i < n; i++)
@@ -95,17 +118,25 @@ int main(int argc, char **argv)
         }
         printf("]\n");
     }
-    printf("---\n");
-    printf("Final podium:\n");
-    printf("1. Dog nr %d\n", firstPlace);
-    printf("2. Dog nr %d\n", secondPlace);
-    printf("3. Dog nr %d\n", thirdPlace);
 
-    for(int i = 0; i < m; i++)
+    if(!quitFlag)
     {
-        int err = pthread_join(dogs[i].tid, NULL);
-        if(err != 0)
-            ERR("Can't join with a thread");
+        printf("---\n");
+        printf("Final podium:\n");
+        printf("1. Dog nr %d\n", firstPlace);
+        printf("2. Dog nr %d\n", secondPlace);
+        printf("3. Dog nr %d\n", thirdPlace);
+
+        for(int i = 0; i < m; i++)
+        {
+            int err = pthread_join(dogs[i].tid, NULL);
+            if(err != 0)
+                ERR("Can't join with a thread");
+        }
+    }
+    else 
+    {
+        printf("\n---\nRace interrupted by SIGINT signal\n---\n");
     }
 
     for (int i = 0; i < n; i++) 
@@ -137,6 +168,14 @@ void* DogRun(void *voidArgs)
 
     while(pos < *args->n-1)
     {
+        pthread_mutex_lock(args->mxQuitFlag);
+        if(*args->quitFlag)
+        {
+            pthread_mutex_unlock(args->mxQuitFlag);
+            return NULL;
+        }
+        pthread_mutex_unlock(args->mxQuitFlag);
+
         sleepTime = rand_r(&args->seed) % 1321 + 200;
         thread_sleep(sleepTime);
 
@@ -167,7 +206,7 @@ void* DogRun(void *voidArgs)
     pthread_mutex_lock(&args->mxTrack[pos]);
     args->track[pos]--;
     pthread_mutex_unlock(&args->mxTrack[pos]);
-    
+
     if(*args->firstPlace == -1)
     {
         pthread_mutex_lock(args->mxPodium);
