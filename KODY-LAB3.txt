@@ -24,3 +24,5 @@ etap5 - obsługa sygnału SIGINT i odpowiednie zwalnianie pamięci/kończenie mu
 Symulacja wyścigu psów na torze o długości n z m psami (pies = wątek). Psy losowo poruszają się po torze i zmieniają kierunek. Wątki synchronizowane mutexami, SIGINT kończy wyścig 
 
 etap1 - Inicjalizacja tory, każdy wątek losuje jedną pozycję na torze, zwiększa jej wartość o 1 i kończy działanie. Wątek główny potem wypisuje stan toru
+
+etap2 - Wprowadzenie logiki poruszania się psów, bez synchronizacji. Każdy pies losowo śpi, losuje odległość do przemieszczenia i przesuwa się, jeśli nie ma tam psa. Co 1s wątek główny wypisuje trasę
