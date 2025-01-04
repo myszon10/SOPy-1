@@ -20,3 +20,7 @@ etap4 - L zwiększane tylko gdy każdy wątek sprawdzi podzielność (zmienna po
 
 etap5 - obsługa sygnału SIGINT i odpowiednie zwalnianie pamięci/kończenie mutexów/odblokowanie maski
 
+--- ZAD3 ---
+Symulacja wyścigu psów na torze o długości n z m psami (pies = wątek). Psy losowo poruszają się po torze i zmieniają kierunek. Wątki synchronizowane mutexami, SIGINT kończy wyścig 
+
+etap1 - Inicjalizacja tory, każdy wątek losuje jedną pozycję na torze, zwiększa jej wartość o 1 i kończy działanie. Wątek główny potem wypisuje stan toru
