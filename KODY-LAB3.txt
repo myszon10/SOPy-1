@@ -15,3 +15,8 @@ etap1 - tworzenie n wątków, każdy wątek wypisuje *, wątęk główny czeka n
 etap2 - wątki poboczne losują swoje mnożniki na ekran
 
 etap3 - wątek główny wykonuje odliczanie, poboczne sprawdzają podzielność, bez synchronizacji/ochrony licznika
+
+etap4 - L zwiększane tylko gdy każdy wątek sprawdzi podzielność (zmienna pomocnicza i mutexy)
+
+etap5 - obsługa sygnału SIGINT i odpowiednie zwalnianie pamięci/kończenie mutexów/odblokowanie maski
+

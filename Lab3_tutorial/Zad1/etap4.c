@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <time.h>
 
 #define DEFAULT_THREADCOUNT 10
@@ -17,6 +18,8 @@ typedef struct thread_args
     UINT seed;
     int M;
     int *L;
+    int *checkedThreads;
+    pthread_mutex_t *mxChecked;
 } threadArgs_t;
 
 void ReadArguments(int argc, char **argv, int *threadCount);
@@ -27,8 +30,11 @@ int main(int argc, char **argv)
 {
     int threadCount;
     int L = 1;
+    int checkedThreads = 0;
+    pthread_mutex_t mxChecked = PTHREAD_MUTEX_INITIALIZER;
+
     ReadArguments(argc, argv, &threadCount);
-    
+
     threadArgs_t *threadArgs = (threadArgs_t*)malloc(sizeof(threadArgs_t) * threadCount);
     if(threadArgs == NULL)
         ERR("Malloc error for thread arguments");
@@ -37,8 +43,10 @@ int main(int argc, char **argv)
     for(int i = 0; i < threadCount; i++)
     {
         threadArgs[i].seed = rand();
-        threadArgs[i].L = &L;
         threadArgs[i].M = rand_r(&threadArgs[i].seed) % 99 + 2;
+        threadArgs[i].L = &L;
+        threadArgs[i].checkedThreads = &checkedThreads;
+        threadArgs[i].mxChecked = &mxChecked;
     }
 
     for(int i = 0; i < threadCount; i++) 
@@ -50,18 +58,28 @@ int main(int argc, char **argv)
 
     for(;;)
     {
+        pthread_mutex_lock(&mxChecked);
+        if(checkedThreads == threadCount)
+        {
+            checkedThreads = 0;
+            L++;
+        }
+        pthread_mutex_unlock(&mxChecked);
+
         thread_sleep();
-        L++;
     }
 
-    // for(int i = 0; i < threadCount; i++) 
-    // {
-    //     int err = pthread_join(threadArgs[i].tid, NULL);
-    //     if(err != 0)
-    //         ERR("Can't join with a thread");
-    // }
-    // printf("\n");
-    // free(threadArgs);
+    for(int i = 0; i < threadCount; i++) 
+    {
+        int err = pthread_join(threadArgs[i].tid, NULL);
+        if(err != 0)
+            ERR("Can't join with a thread");
+    }
+
+    free(threadArgs);
+    pthread_mutex_destroy(&mxChecked);
+
+    exit(EXIT_SUCCESS);
 }
 
 void ReadArguments(int argc, char **argv, int *threadCount) 
@@ -85,12 +103,18 @@ void ReadArguments(int argc, char **argv, int *threadCount)
 
 void* thread_counter(void *voidArgs)
 {
-    threadArgs_t *args = voidArgs;
+    threadArgs_t *args = (threadArgs_t *) voidArgs;
 
     for(;;)
     {
         if(*(args->L) % args->M == 0)
+        {
             printf("%d jest podzielne przez %d\n", *(args->L), args->M);
+        }
+
+        pthread_mutex_lock(args->mxChecked);
+        (*args->checkedThreads)++;
+        pthread_mutex_unlock(args->mxChecked);
 
         thread_sleep();
     }
