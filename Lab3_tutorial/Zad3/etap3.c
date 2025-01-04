@@ -22,6 +22,8 @@ typedef struct dogArgs
     int dogNr;
     int *dogsFinished;
     int *firstPlace, *secondPlace, *thirdPlace;
+    pthread_mutex_t *mxPodium;
+    pthread_mutex_t *mxFinished;
 } dogArgs_t;
 
 void ReadArguments(int argc, char **argv, int *n, int *m);
@@ -54,6 +56,9 @@ int main(int argc, char **argv)
             ERR("Couldn't initialize mutex!");
     }
 
+    pthread_mutex_t mxPodium = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t mxFinished = PTHREAD_MUTEX_INITIALIZER;
+
     srand(time(NULL));
     for(int i = 0; i < m; i++)
     {
@@ -66,6 +71,8 @@ int main(int argc, char **argv)
         dogs[i].firstPlace = &firstPlace;
         dogs[i].secondPlace = &secondPlace;
         dogs[i].thirdPlace = &thirdPlace;
+        dogs[i].mxPodium = &mxPodium;
+        dogs[i].mxFinished = &mxFinished;
     }
 
     for(int i = 0; i < m; i++) 
@@ -80,8 +87,10 @@ int main(int argc, char **argv)
         thread_sleep(1000);
         printf("Track: [");
         for(int i = 0; i < n; i++)
-        {
+        {  
+            pthread_mutex_lock(&mxTrack[i]);
             printf("%d", track[i]);
+            pthread_mutex_unlock(&mxTrack[i]);
             if(i < n-1)
                 printf(", ");
         }
@@ -134,29 +143,54 @@ void* DogRun(void *voidArgs)
 
         distance = rand_r(&args->seed) % 5 + 1;
         nextPos = MIN(pos + distance, *args->n - 1);
+
+        pthread_mutex_lock(&args->mxTrack[nextPos]);
         if(args->track[nextPos] != 0)
         {
             printf("[Dog nr %d] waf waf waf, pos: %d\n", args->dogNr, pos);
+            pthread_mutex_unlock(&args->mxTrack[nextPos]);
             continue;
         }
+
+        pthread_mutex_lock(&args->mxTrack[pos]);
         args->track[pos]--;
+        pthread_mutex_unlock(&args->mxTrack[pos]);
+
         args->track[nextPos]++;
+        pthread_mutex_unlock(&args->mxTrack[nextPos]);
         pos = nextPos;
         
+        if(pos >= *args->n-1) break;
 
         printf("[Dog nr %d] pos: %d, finished: %s\n", args->dogNr, pos, (pos == *args->n-1 ? "YES" : "NO"));
     }
 
+    pthread_mutex_lock(&args->mxTrack[pos]);
     args->track[pos]--;
-
+    pthread_mutex_unlock(&args->mxTrack[pos]);
+    
     if(*args->firstPlace == -1)
+    {
+        pthread_mutex_lock(args->mxPodium);
         *args->firstPlace = args->dogNr;
+        pthread_mutex_unlock(args->mxPodium);
+    }
     else if(*args->secondPlace == -1)
+    {
+        pthread_mutex_lock(args->mxPodium);
         *args->secondPlace = args->dogNr;
+        pthread_mutex_unlock(args->mxPodium);
+    }
     else if(*args->thirdPlace == -1)
+    {
+        pthread_mutex_lock(args->mxPodium);
         *args->thirdPlace = args->dogNr;
+        pthread_mutex_unlock(args->mxPodium);
+    }
 
+    pthread_mutex_lock(args->mxFinished);
     (*args->dogsFinished)++;
+    pthread_mutex_unlock(args->mxFinished);
     printf("[Dog nr %d] finished at spot %d\n", args->dogNr, *args->dogsFinished);
 
     return NULL;
