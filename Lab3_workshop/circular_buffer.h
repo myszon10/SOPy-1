@@ -2,6 +2,7 @@
 #define CIRCULAR_BUFFER_H
 
 #include <pthread.h>
+#include <stdbool.h>
 
 #define BUFFER_SIZE 16 // Example size for the buffer
 
@@ -11,13 +12,14 @@ typedef struct circular_buffer {
     int tail;                  // Points to the next available item for dequeue
     int count;                 // Number of items currently in the buffer
     pthread_mutex_t mxBuffer;  // Mutex for synchronizing buffer access
+    bool *quitFlag; 
 } circular_buffer;
 
 /**
  * Creates and initializes a circular buffer.
  * Returns a pointer to the buffer, or NULL on failure.
  */
-circular_buffer* circular_buffer_init();
+circular_buffer* circular_buffer_init(bool *quitFlag);
 
 /**
  * Destroys the circular buffer and frees all associated resources.

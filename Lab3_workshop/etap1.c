@@ -23,7 +23,8 @@ void* consumerFunc(void* voidArgs);
 
 int main(int argc, char **argv) 
 {
-    circular_buffer *buffer = circular_buffer_init();
+    bool *neededForOtherEtap = NULL;
+    circular_buffer *buffer = circular_buffer_init(neededForOtherEtap);
     if(buffer == NULL)
         ERR("Failed to initialize buffer");
 

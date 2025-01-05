@@ -33,3 +33,5 @@ etap4 - Wątek główny odbiera sygnał SIGINT, kończy wtedy wszystkie wątki i
 
 --- WORKSHOP ---
 etap1 - implementacja struktury circular buffer, testowanie struktury (wątki-producenci dodają napisy do bufora, a wątki-konsumenci je zdejmują)
+
+etap2 - rekurencyjne przechodzenie przez foldery, wątki równolegle pobierają ścieżki z bufora i informują o odebraniu pliku (po czym go usuwają z bufora)
