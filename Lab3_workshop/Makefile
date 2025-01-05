@@ -12,7 +12,7 @@ OBJ1=$(SRC1:.c=.o)
 OBJ2=$(SRC2:.c=.o)
 OBJ3=$(SRC3:.c=.o)
 
-all: etap2
+all: etap3
 
 etap1: $(OBJ1)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)

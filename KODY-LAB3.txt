@@ -35,3 +35,6 @@ etap4 - Wątek główny odbiera sygnał SIGINT, kończy wtedy wszystkie wątki i
 etap1 - implementacja struktury circular buffer, testowanie struktury (wątki-producenci dodają napisy do bufora, a wątki-konsumenci je zdejmują)
 
 etap2 - rekurencyjne przechodzenie przez foldery, wątki równolegle pobierają ścieżki z bufora i informują o odebraniu pliku (po czym go usuwają z bufora)
+
+etap3 - wątek zlicza liczbę małych i dużych liter w pliku, dodaje je do globalnej tablicy, a jak kończy pracę wypisuje na ekran liczbę znaków w pliku (wypisywanie i modyfikacja tablicy mutexami - każdy znak oddzielny mutex)
+
