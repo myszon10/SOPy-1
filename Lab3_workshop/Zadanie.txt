@@ -1,0 +1,57 @@
+Zadanie: Symulacja firmy z pracownikami zliczającymi literki
+
+W firmie każdy pracownik korzysta z tablicy magnesowej, na której zapisuje motywujące napisy do pracy. Pewnego dnia wszystkie literki zostały skradzione, a celem programu jest pomóc w zidentyfikowaniu brakujących liter, aby pracownicy mogli odzyskać motywację.
+
+Struktura firmy:
+
+Foldery reprezentują korytarze w firmie.
+Pliki tekstowe (*.txt) symbolizują tablice pracowników, którzy zgłaszają brakujące literki.
+Liczba wątków jest określona jako parametr programu.
+Główny wątek skanuje katalog i wrzuca ścieżki plików do kolejki (circular buffer).
+Wątki pracownicze pobierają zadania z kolejki i przetwarzają pliki.
+Etapy realizacji:
+
+Etap 1: Implementacja kolejki zadań (circular buffer)
+Implementujemy funkcjonalność bufora cyklicznego:
+init: Inicjalizacja bufora.
+enqueue: Dodawanie ścieżek plików do bufora (zawijanie przy przepełnieniu).
+dequeue: Pobieranie ścieżek plików z bufora (zawijanie przy pustym buforze).
+deinit: Zwalnianie zasobów bufora.
+Kolejka będzie używana przez wątek główny (dodający ścieżki) oraz wątki pracowników (pobierające zadania).
+Cel: Przygotowanie mechanizmu komunikacji między wątkiem głównym a wątkami pracowniczymi.
+
+Etap 2: Eksploracja struktury katalogów
+Program:
+Przyjmuje w argumentach nazwę głównego katalogu oraz liczbę wątków pracowniczych.
+Wątek główny rekurencyjnie przeszukuje wszystkie katalogi i pliki w strukturze.
+Dla każdego pliku tekstowego (*.txt) wątek główny dodaje ścieżkę pliku do bufora cyklicznego.
+Wątki pracownicze pobierają zadania z bufora i wypisują komunikat:
+„Witam! Jestem pracownikiem i reprezentuję plik XYZ.txt”.
+Cel: Program skutecznie skanuje strukturę katalogów, identyfikuje pliki do przetworzenia i przygotowuje wątki do pracy.
+
+Etap 3: Zliczanie liter w plikach
+Wątki pracownicze:
+Pobierają ścieżki plików z kolejki.
+Otwierają pliki i zliczają wystąpienia poszczególnych liter (tylko a-z, A-Z).
+Korzystają z mutexów do ochrony globalnej tablicy przechowującej sumaryczne zliczenia liter.
+Po zakończeniu pracy wypisują komunikat:
+„Pracownik XYZ zakończył zliczanie liter. Wynik to: A=..., B=..., ...”.
+Cel: Główne zadanie programu – bezpieczne zliczanie liter w plikach w kontekście wielowątkowości.
+
+Etap 4: Monitorowanie i zatrzymywanie programu (SIGUSR1 i SIGINT)
+Dodajemy dwie funkcjonalności:
+Monitorowanie postępów:
+Wątek główny co 0,1 sekundy wysyła sygnał SIGUSR1 do siebie.
+Obsługa SIGUSR1 wypisuje aktualny stan zliczania liter (zawartość tablicy sumarycznych wyników).
+Zatrzymywanie programu:
+Po odebraniu sygnału SIGINT (np. Ctrl+C), wątek główny ustawia flagę końca pracy.
+Wszystkie wątki pracownicze sprawdzają flagę i przerywają pracę w kontrolowany sposób.
+Program kończy się, zwalniając wszystkie zasoby.
+Cel: Umożliwienie użytkownikowi monitorowania postępów oraz kontrolowanego zakończenia programu w dowolnym momencie.
+
+Dodatkowe założenia techniczne:
+
+Wszystkie współdzielone dane (np. bufor, tablica wyników) są chronione mutexami.
+Kolejka zadań działa na zasadzie bufora cyklicznego.
+Używamy POSIX-owych funkcji (open, read, close, opendir, readdir, closedir).
+Brak zmiennych globalnych. Wszystkie dane są przekazywane przez struktury argumentów.

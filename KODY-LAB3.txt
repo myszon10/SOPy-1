@@ -30,3 +30,6 @@ etap2 - Wprowadzenie logiki poruszania się psów, bez synchronizacji. Każdy pi
 etap3 - Dodanie synchronizacji (mutexy)
 
 etap4 - Wątek główny odbiera sygnał SIGINT, kończy wtedy wszystkie wątki i wyświetla komunikat
+
+--- WORKSHOP ---
+etap1 - implementacja struktury circular buffer, testowanie struktury (wątki-producenci dodają napisy do bufora, a wątki-konsumenci je zdejmują)
