@@ -38,3 +38,4 @@ etap2 - rekurencyjne przechodzenie przez foldery, wątki równolegle pobierają 
 
 etap3 - wątek zlicza liczbę małych i dużych liter w pliku, dodaje je do globalnej tablicy, a jak kończy pracę wypisuje na ekran liczbę znaków w pliku (wypisywanie i modyfikacja tablicy mutexami - każdy znak oddzielny mutex)
 
+
