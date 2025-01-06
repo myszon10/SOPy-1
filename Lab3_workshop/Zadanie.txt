@@ -41,7 +41,7 @@ Cel: Główne zadanie programu – bezpieczne zliczanie liter w plikach w kontek
 Etap 4: Monitorowanie i zatrzymywanie programu (SIGUSR1 i SIGINT)
 Dodajemy dwie funkcjonalności:
 Monitorowanie postępów:
-Wątek główny co 0,1 sekundy wysyła sygnał SIGUSR1 do siebie.
+Program co 0,1 sekundy wysyła sygnał SIGUSR1 do siebie.
 Obsługa SIGUSR1 wypisuje aktualny stan zliczania liter (zawartość tablicy sumarycznych wyników).
 Zatrzymywanie programu:
 Po odebraniu sygnału SIGINT (np. Ctrl+C), wątek główny ustawia flagę końca pracy.

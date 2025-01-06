@@ -9,24 +9,20 @@
 #include <limits.h> // PATH_MAX
 #include <fcntl.h> // do funkcji open
 #include <ctype.h> // do funkcji isalpha, toupper
-#include "circular_buffer.h"
 #include <signal.h>
+#include "circular_buffer.h"
 
 #define MUTEX_COUNT 52
 
 #define ERR(source) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(EXIT_FAILURE))
 
-typedef struct {
-    circular_buffer *buffer;
+typedef struct signal_handler_args {
     int *alphabetCounter;
     pthread_mutex_t *mutexes;
-    pthread_mutex_t *mxProcessed;
     pthread_mutex_t *mxQuitFlag;
     bool *quitFlag;
-    int *processedFiles;
-    int *totalFiles;
-    pthread_mutex_t *mxPrint;
-} signal_context_t;
+    pthread_t mainThreadId;
+} signal_handler_args_t;
 
 typedef struct worker_args {
     pthread_t tid;
@@ -46,9 +42,8 @@ void ReadArgs(int argc, char **argv, char *startPath, int *threadCount);
 void explore_directory(const char* dir_path, circular_buffer *buffer, int *totalFiles);
 void* worker_func(void* voidArgs);
 void process_file(const char* file_path, int *alphabetCounter, pthread_mutex_t *mutexes, int worker_id, pthread_mutex_t *mxPrint);
-void print_alphabet_counters(int *alphabetCounter);
-void sigusr1_handler(int signo, siginfo_t *info, void *context);
-void sigint_handler(int signo, siginfo_t *info, void *context);
+void* signal_handler_thread(void* voidArgs);
+void print_alphabet_counters(int *alphabetCounter, pthread_mutex_t *mutexes);
 
 int main(int argc, char **argv) 
 {
@@ -58,9 +53,6 @@ int main(int argc, char **argv)
     pthread_mutex_t mutexes[MUTEX_COUNT];
     pthread_mutex_t mxPrint = PTHREAD_MUTEX_INITIALIZER;
 
-    bool quitFlag = false;
-    pthread_mutex_t mxQuitFlag = PTHREAD_MUTEX_INITIALIZER;
-
     for(int i = 0; i < MUTEX_COUNT; i++)
     {
         if(pthread_mutex_init(&mutexes[i], NULL) != 0)
@@ -69,6 +61,8 @@ int main(int argc, char **argv)
     
     ReadArgs(argc, argv, startPath, &threadCount);
 
+    bool quitFlag = false;
+    pthread_mutex_t mxQuitFlag = PTHREAD_MUTEX_INITIALIZER;
 
     worker_args_t *threadArgs = (worker_args_t *)malloc(sizeof(worker_args_t) * threadCount);
     if(threadArgs == NULL)
@@ -80,32 +74,17 @@ int main(int argc, char **argv)
     int processedFiles = 0;
     pthread_mutex_t mxProcessed = PTHREAD_MUTEX_INITIALIZER;
 
-    signal_context_t ctx = {
-        .buffer = buffer,
+    signal_handler_args_t signalArgs = {
         .alphabetCounter = alphabetCounter,
         .mutexes = mutexes,
-        .mxProcessed = &mxProcessed,
         .mxQuitFlag = &mxQuitFlag,
         .quitFlag = &quitFlag,
-        .processedFiles = &processedFiles,
-        .totalFiles = &totalFiles,
-        .mxPrint = &mxPrint
+        .mainThreadId = pthread_self()
     };
 
-    sigset_t mask;
-    sigemptyset(&mask);
-
-    // SA_SIGINFO - sigaction potrzebuje dodatkowych informacji (contextu)
-    struct sigaction sa_usr1 = {.sa_sigaction = sigusr1_handler, .sa_flags = SA_SIGINFO};
-    struct sigaction sa_int = {.sa_sigaction = sigint_handler, .sa_flags = SA_SIGINFO};
-
-    sa_usr1.sa_mask = mask;
-    sa_int.sa_mask = mask;
-
-    if (sigaction(SIGUSR1, &sa_usr1, NULL) == -1)
-        ERR("sigaction SIGUSR1");
-    if (sigaction(SIGINT, &sa_int, NULL) == -1)
-        ERR("sigaction SIGINT");
+    pthread_t signalThread;
+    if(pthread_create(&signalThread, NULL, signal_handler_thread, &signalArgs) != 0)
+        ERR("Cannot create signal handler thread");
 
     // Przypisanie argumentów wątków pomocniczych
     for(int i = 0; i < threadCount; i++)
@@ -138,17 +117,7 @@ int main(int argc, char **argv)
             break;
         }
         pthread_mutex_unlock(&mxProcessed);
-
         usleep(100000); // Czekanie na przetworzenie plików (0.1s)
-        kill(getpid(), SIGUSR1);
-
-        pthread_mutex_lock(&mxQuitFlag);
-        if(quitFlag)
-        {
-            pthread_mutex_unlock(&mxQuitFlag);
-            break;
-        }
-        pthread_mutex_unlock(&mxQuitFlag);
     }
 
     // Ustawienie flagi zakończenia pracy
@@ -303,37 +272,58 @@ void process_file(const char* file_path, int *alphabetCounter, pthread_mutex_t *
 
     pthread_mutex_lock(mxPrint);
     printf("Pracownik nr %d zakończył zliczanie liter w pliku %s\n", worker_id, file_path);
-    print_alphabet_counters(localCounter);
+    
+    print_alphabet_counters(alphabetCounter, mutexes);
+
     pthread_mutex_unlock(mxPrint);
 }
 
-void print_alphabet_counters(int *alphabetCounter)
+void* signal_handler_thread(void* voidArgs)
+{
+    signal_handler_args_t *args = voidArgs;
+
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGUSR1);
+    sigaddset(&mask, SIGINT);
+
+    while(true)
+    {
+        int sig;
+        if(sigwait(&mask, &sig) != 0)
+            ERR("sigwait");
+
+        if(sig == SIGUSR1)
+            print_alphabet_counters(args->alphabetCounter, args->mutexes);
+        else if(sig == SIGINT)
+        {
+            pthread_mutex_lock(args->mxQuitFlag);
+            *(args->quitFlag) = true;
+            pthread_mutex_unlock(args->mxQuitFlag);
+            break;
+        }
+    }
+
+    return NULL;
+}
+
+void print_alphabet_counters(int *alphabetCounter, pthread_mutex_t *mutexes)
 {
     printf("Wyniki:\n");
-    for(int i = 0; i < 26; i++)
+    for (int i = 0; i < 26; i++) 
     {
+        pthread_mutex_lock(&mutexes[i]);
         if(alphabetCounter[i] != 0)
             printf("%c=%d ", 'A' + i, alphabetCounter[i]);
+        pthread_mutex_unlock(&mutexes[i]);
     }
     printf("\n");
-    for(int i = 26; i < 52; i++)
-    {  
+    for (int i = 26; i < 52; i++) 
+    {
+        pthread_mutex_lock(&mutexes[i]);
         if(alphabetCounter[i] != 0)
             printf("%c=%d ", 'a' + (i - 26), alphabetCounter[i]);
+        pthread_mutex_unlock(&mutexes[i]);
     }
     printf("\n\n");
-}
-
-void sigusr1_handler(int signo, siginfo_t *info, void *context)
-{
-    signal_context_t *ctx = context;
-    print_alphabet_counters(ctx->alphabetCounter);
-}
-
-void sigint_handler(int signo, siginfo_t *info, void *context)
-{
-    signal_context_t *ctx = context;
-    pthread_mutex_lock(ctx->mxQuitFlag);
-    *(ctx->quitFlag) = true;
-    pthread_mutex_unlock(ctx->mxQuitFlag);
 }
