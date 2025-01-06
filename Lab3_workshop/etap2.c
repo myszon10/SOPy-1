@@ -3,10 +3,12 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <unistd.h> // do funkcji usleep, read i close
 #include <string.h>
 #include <stdbool.h>
 #include <limits.h> // PATH_MAX
+#include <fcntl.h> // do funkcji open
+#include <sys/stat.h> // do funkcji lstat i sprawdzania typów plików
 #include "circular_buffer.h"
 
 #define ERR(source) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(EXIT_FAILURE))
@@ -112,32 +114,47 @@ void ReadArgs(int argc, char** argv, char *startPath, int *threadCount)
 void explore_directory(const char* dir_path, circular_buffer *buffer, int *totalFiles)
 {
     DIR *dir = opendir(dir_path);
-    if(!dir) 
+    if (!dir)
         ERR("opendir");
 
     struct dirent *entry;
-    while((entry = readdir(dir)) != NULL)
+    struct stat statbuf;
+    char path[PATH_MAX];
+
+    while ((entry = readdir(dir)) != NULL)
     {
-        if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
             continue;
 
-        char path[PATH_MAX];
-        snprintf(path, PATH_MAX, "%s/%s", dir_path, entry->d_name);
+        // Zbudowanie pełnej ścieżki do pliku/katalogu
+        if (snprintf(path, PATH_MAX, "%s/%s", dir_path, entry->d_name) >= PATH_MAX)
+        {
+            ERR("Path length exceeds PATH_MAX");
+        }
 
-        if(entry->d_type == DT_DIR)
+        // Sprawdzenie typu pliku za pomocą lstat
+        if (lstat(path, &statbuf) == -1)
+        {
+            ERR("lstat");
+        }
+
+        if (S_ISDIR(statbuf.st_mode))
         {
             // Rekurencyjne przeszukiwanie podkatalogów
             explore_directory(path, buffer, totalFiles);
         }
-        else if(entry->d_type == DT_REG && strstr(entry->d_name, ".txt")) 
-        { // czy jest plikiem .txt
+        else if (S_ISREG(statbuf.st_mode) && strstr(entry->d_name, ".txt"))
+        {
+            // Plik regularny z rozszerzeniem .txt
             circular_buffer_enqueue(buffer, strdup(path));
             (*totalFiles)++;
         }
     }
 
-    closedir(dir);
+    if (closedir(dir) == -1)
+        ERR("closedir");
 }
+
 
 void* worker_func(void* voidArgs)
 {
