@@ -17,14 +17,6 @@
 
 #define ERR(source) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(EXIT_FAILURE))
 
-typedef struct signal_handler_args {
-    int *alphabetCounter;
-    pthread_mutex_t *mutexes;
-    pthread_mutex_t *mxQuitFlag;
-    bool *quitFlag;
-    pthread_t mainThreadId;
-} signal_handler_args_t;
-
 typedef struct worker_args {
     pthread_t tid;
     circular_buffer *buffer;
@@ -39,12 +31,21 @@ typedef struct worker_args {
     pthread_mutex_t *mxPrint; // mutex do synchronizacji wypisywania
 } worker_args_t;
 
+typedef struct signal_handler_args {
+    pthread_t tid;
+    pthread_mutex_t *mxQuitFlag;
+    bool *quitFlag;
+    int *alphabetCounter;
+    pthread_mutex_t *mutexes;
+    sigset_t *mask;
+} signal_handler_args_t;
+
 void ReadArgs(int argc, char **argv, char *startPath, int *threadCount);
 void explore_directory(const char* dir_path, circular_buffer *buffer, int *totalFiles);
 void* worker_func(void* voidArgs);
 void process_file(const char* file_path, int *alphabetCounter, pthread_mutex_t *mutexes, int worker_id, pthread_mutex_t *mxPrint);
-void* signal_handler_thread(void* voidArgs);
 void print_alphabet_counters(int *alphabetCounter, pthread_mutex_t *mutexes);
+void* signal_handler_thread(void* voidArgs);
 
 int main(int argc, char **argv) 
 {
@@ -53,6 +54,12 @@ int main(int argc, char **argv)
     int alphabetCounter[52] = {0};
     pthread_mutex_t mutexes[MUTEX_COUNT];
     pthread_mutex_t mxPrint = PTHREAD_MUTEX_INITIALIZER;
+
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGUSR1);
+    sigaddset(&mask, SIGINT);
+    pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
     for(int i = 0; i < MUTEX_COUNT; i++)
     {
@@ -75,17 +82,16 @@ int main(int argc, char **argv)
     int processedFiles = 0;
     pthread_mutex_t mxProcessed = PTHREAD_MUTEX_INITIALIZER;
 
-    signal_handler_args_t signalArgs = {
-        .alphabetCounter = alphabetCounter,
-        .mutexes = mutexes,
+    signal_handler_args_t signalHandlerArgs = {
         .mxQuitFlag = &mxQuitFlag,
         .quitFlag = &quitFlag,
-        .mainThreadId = pthread_self()
+        .alphabetCounter = alphabetCounter,
+        .mutexes = mutexes,
+        .mask = &mask
     };
 
-    pthread_t signalThread;
-    if(pthread_create(&signalThread, NULL, signal_handler_thread, &signalArgs) != 0)
-        ERR("Cannot create signal handler thread");
+    if(pthread_create(&signalHandlerArgs.tid, NULL, signal_handler_thread, &signalHandlerArgs))
+        ERR("pthread create");
 
     // Przypisanie argumentów wątków pomocniczych
     for(int i = 0; i < threadCount; i++)
@@ -118,7 +124,8 @@ int main(int argc, char **argv)
             break;
         }
         pthread_mutex_unlock(&mxProcessed);
-        usleep(100000); // Czekanie na przetworzenie plików (0.1s)
+        usleep(100000); // Czekanie na przetworzenie plików
+        kill(0, SIGUSR1);
     }
 
     // Ustawienie flagi zakończenia pracy
@@ -131,6 +138,9 @@ int main(int argc, char **argv)
         if(pthread_join(threadArgs[i].tid, NULL) != 0)
             ERR("pthread join");
     }
+
+    if(pthread_join(signalHandlerArgs.tid, NULL) != 0)
+        ERR("pthread join");
 
     // Zwolnienie zasobów
     for(int i = 0; i < MUTEX_COUNT; i++)
@@ -287,39 +297,20 @@ void process_file(const char* file_path, int *alphabetCounter, pthread_mutex_t *
 
     pthread_mutex_lock(mxPrint);
     printf("Pracownik nr %d zakończył zliczanie liter w pliku %s\n", worker_id, file_path);
-    
-    print_alphabet_counters(alphabetCounter, mutexes);
-
-    pthread_mutex_unlock(mxPrint);
-}
-
-void* signal_handler_thread(void* voidArgs)
-{
-    signal_handler_args_t *args = voidArgs;
-
-    sigset_t mask;
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGUSR1);
-    sigaddset(&mask, SIGINT);
-
-    while(true)
+    printf("Wyniki:\n");
+    for(int i = 0; i < 26; i++)
     {
-        int sig;
-        if(sigwait(&mask, &sig) != 0)
-            ERR("sigwait");
-
-        if(sig == SIGUSR1)
-            print_alphabet_counters(args->alphabetCounter, args->mutexes);
-        else if(sig == SIGINT)
-        {
-            pthread_mutex_lock(args->mxQuitFlag);
-            *(args->quitFlag) = true;
-            pthread_mutex_unlock(args->mxQuitFlag);
-            break;
-        }
+        if(localCounter[i] != 0)
+            printf("%c=%d ", 'A' + i, localCounter[i]);
     }
-
-    return NULL;
+    printf("\n");
+    for(int i = 26; i < 52; i++)
+    {  
+        if(localCounter[i] != 0)
+            printf("%c=%d ", 'a' + (i - 26), localCounter[i]);
+    }
+    printf("\n\n");
+    pthread_mutex_unlock(mxPrint);
 }
 
 void print_alphabet_counters(int *alphabetCounter, pthread_mutex_t *mutexes)
@@ -341,4 +332,29 @@ void print_alphabet_counters(int *alphabetCounter, pthread_mutex_t *mutexes)
         pthread_mutex_unlock(&mutexes[i]);
     }
     printf("\n\n");
+}
+
+void* signal_handler_thread(void* voidArgs)
+{
+    signal_handler_args_t *args = voidArgs;
+
+    sigset_t * mask = args->mask;
+    while(!*(args->quitFlag))
+    {
+        int sig;
+        if(sigwait(mask, &sig) != 0)
+            ERR("sigwait");
+
+        if(sig == SIGUSR1)
+            print_alphabet_counters(args->alphabetCounter, args->mutexes);
+        else if(sig == SIGINT)
+        {
+            pthread_mutex_lock(args->mxQuitFlag);
+            *(args->quitFlag) = true;
+            pthread_mutex_unlock(args->mxQuitFlag);
+            break;
+        }
+    }
+
+    return NULL;
 }
