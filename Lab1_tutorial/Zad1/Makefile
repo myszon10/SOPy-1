@@ -1,17 +1,10 @@
 CC=gcc
-CFLAGS=-Wall -fsanitize=address,undefined
-LDFLAGS=-fsanitize=address,undefined
+CFLAGS=-std=gnu99 -Wall
 
-all: etap12 etap34
+all: etap1
 
-etap12:
-	gcc $(CFLAGS) -o etap12 etap12.c 
-
-etap34:
-	gcc $(CFLAGS) -o etap34 etap34.c
-
-
-.PHONY: clean all
+etap1: etap1.c
+	$(CC) $(CFLAGS) -o etap1 etap1.c
 
 clean:
-	rm etap12 etap34
+	rm -f etap1
