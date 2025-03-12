@@ -1,0 +1,12 @@
+----- Tutorial -----
+Zad 1.
+- etap1
+Tworzenie FIFO, zczytywanie z niego znaków i wypisywanie alfanumerycznych znaków na ekran
+- etap2
+Otwieranie FIFO do zapisu, czytanie danych z pliku wejściowego i wysyłanie ich do FIFO w paczkach o stałej wielkości (PIPE_BUF) wraz z PID procesu
+- etap3 
+Odczyt danych z FIFO w blokach PIPE_BUF, wypisanie PID nadawcy przed każdą wiadomością oraz usuwanie FIFO po zakończeniu działania serwera
+
+Zad 2.
+- etap1 
+Tworzenie n procesów potomnych, które generują losowe litery i przesyłąją je do procesu rodzica przez współdzielony potok R. Rodzic odbiera znaki i wypisuje je na ekran. Obsługa SIGCHILD aby zapobiec zombie
