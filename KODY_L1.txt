@@ -1,2 +1,8 @@
 === Zad 1 ===
 Etap1: otwieranie pliku za pomocą mmap, wypisanie zawartości
+
+Etap2: zliczanie znaków w pliku
+
+Etap3: n procesów dzieci, każde dziecko otwiera plik i zczytuje znaki w danym fragmencie tekstu
+
+Etap4: każde dziecko ma 30% na przerwanie działania, obsługa tego w procesu rodzica
