@@ -1,21 +1,2 @@
------ Tutorial -----
-Zad 1.
-- etap1
-Tworzenie FIFO, zczytywanie z niego znaków i wypisywanie alfanumerycznych znaków na ekran
-- etap2
-Otwieranie FIFO do zapisu, czytanie danych z pliku wejściowego i wysyłanie ich do FIFO w paczkach o stałej wielkości (PIPE_BUF) wraz z PID procesu
-- etap3 
-Odczyt danych z FIFO w blokach PIPE_BUF, wypisanie PID nadawcy przed każdą wiadomością oraz usuwanie FIFO po zakończeniu działania serwera
-
-Zad 2.
-- etap1 
-Tworzenie n procesów potomnych, które generują losowe litery i przesyłąją je do procesu rodzica przez współdzielony potok R. Rodzic odbiera znaki i wypisuje je na ekran. Obsługa SIGCHILD aby zapobiec zombie
-- etap2
-Po otrzymaniu SIGINT, rodzic losuje aktywne dziecko i wysyła mu losowy znak [a-z]. Dziecko po otrzymaniu znaku generuje losowy bufor (1-200 B) i przesyła go do rodzica. Każde dziecko ma 20% szans na zakończenie po SIGINT. Rodzic odbiera dane z R i wypisuje je na ekran.
-
-====== ZADANIA ======
-Zad 3.
-- etap 1
-Tworzenie n procesów potomnych, każdy wypisuje swój PID i się kończy
-- etap 2
-Tworzenie głównego strumienia Children -> Parent i indywidualnych strumieni Parent -> Child, parent wysyła wiadomość do childów po kolei oddzielnymi pipami i każde dziecko wysyła odpowiedź na współdzielonym pipie
+=== Zad 1 ===
+Etap1: otwieranie pliku za pomocą mmap, wypisanie zawartości
